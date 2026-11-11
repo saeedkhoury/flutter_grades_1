@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_grades_1/main.dart';
-import 'package:flutter_grades_1/models/student.dart';
-import 'package:flutter_grades_1/screens/grades_screen.dart';
 
 void main() {
   group('Student', () {
@@ -47,12 +45,15 @@ void main() {
   });
 
   group('GradesScreen', () {
-    testWidgets('shows the average and all students', (tester) async {
+    testWidgets('shows the average, pass count and all students', (
+      tester,
+    ) async {
       await tester.pumpWidget(const GradesApp());
 
-      expect(find.text('ממוצע: 66.3'), findsOneWidget);
+      expect(find.text('66.3'), findsOneWidget);
+      expect(find.text('2 / 4'), findsOneWidget);
       expect(find.text('נועה'), findsOneWidget);
-      expect(find.text('ציון: 92'), findsOneWidget);
+      expect(find.text('92'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle), findsNWidgets(2));
       expect(find.byIcon(Icons.cancel), findsNWidgets(2));
     });
@@ -62,34 +63,48 @@ void main() {
 
       // Third row is יוסף with 54 (failing).
       await tester.tap(find.byIcon(Icons.add).at(2));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(find.text('ציון: 55'), findsOneWidget);
+      expect(find.text('55'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle), findsNWidgets(3));
-      expect(find.text('ממוצע: 66.5'), findsOneWidget);
+      expect(find.text('66.5'), findsOneWidget);
+      expect(find.text('3 / 4'), findsOneWidget);
     });
 
     testWidgets('- lowers a grade', (tester) async {
       await tester.pumpWidget(const GradesApp());
 
       await tester.tap(find.byIcon(Icons.remove).first);
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(find.text('ציון: 91'), findsOneWidget);
+      expect(find.text('91'), findsOneWidget);
+    });
+
+    testWidgets('- does nothing when the grade is already 0', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: GradesScreen(students: [Student(name: 'א', grade: 0)]),
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.remove));
+      await tester.pumpAndSettle();
+
+      expect(find.text('0'), findsOneWidget);
     });
 
     testWidgets('sort button toggles grade order', (tester) async {
       await tester.pumpWidget(const GradesApp());
 
-      await tester.tap(find.byIcon(Icons.sort));
-      await tester.pump();
+      await tester.tap(find.text('מיון'));
+      await tester.pumpAndSettle();
       expect(
         tester.getTopLeft(find.text('עומר')).dy,
         lessThan(tester.getTopLeft(find.text('נועה')).dy),
       );
 
-      await tester.tap(find.byIcon(Icons.sort));
-      await tester.pump();
+      await tester.tap(find.text('מיון'));
+      await tester.pumpAndSettle();
       expect(
         tester.getTopLeft(find.text('נועה')).dy,
         lessThan(tester.getTopLeft(find.text('עומר')).dy),
